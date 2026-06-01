@@ -9,6 +9,9 @@ const requiredVars = [
   'MONGODB_URI',
   'JWT_SECRET',
   'JWT_EXPIRES_IN',
+  'CLOUDINARY_CLOUD_NAME',
+  'CLOUDINARY_API_KEY',
+  'CLOUDINARY_API_SECRET',
 ];
 
 for (const key of requiredVars) {
@@ -27,4 +30,9 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET,
   jwtExpiresIn: process.env.JWT_EXPIRES_IN,
   bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
+  cloudinary: {
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiKey: process.env.CLOUDINARY_API_KEY,
+    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  },
 };
