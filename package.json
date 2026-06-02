@@ -13,8 +13,6 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@neondatabase/serverless": "^0.6.0",
-    "@prisma/adapter-neon": "^5.7.1",
     "@prisma/client": "^5.7.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
