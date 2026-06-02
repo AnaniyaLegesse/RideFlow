@@ -5,15 +5,16 @@
   "main": "server.js",
   "type": "module",
   "scripts": {
-  "dev": "nodemon server.js",
-  "start": "node server.js",
-  "postinstall": "prisma generate"
-},
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "postinstall": "prisma generate"
+  },
   "engines": {
     "node": ">=20.0.0"
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.6.0",
+    "@prisma/adapter-neon": "^5.7.1",
     "@prisma/client": "^5.7.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",
