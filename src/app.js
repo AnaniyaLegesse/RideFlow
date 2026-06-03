@@ -2,32 +2,36 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 import router from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import swaggerSpec from './config/swagger.js';
 
 const app = express();
 
-// Security middleware
-app.use(helmet());
+app.use(helmet({ contentSecurityPolicy: false }));
 
-// CORS — allows browsers to make requests to this server
 app.use(cors({
   origin: process.env.CLIENT_URL || '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Request logging
 app.use(morgan('dev'));
-
-// Parse incoming JSON request bodies
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// All routes live under /api
+// Swagger docs
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'RideFlow API Docs',
+  customCss: '.swagger-ui .topbar { background-color: #1a1a2e; }',
+  swaggerOptions: {
+    persistAuthorization: true,
+  },
+}));
+
 app.use('/api', router);
 
-// Handle requests to routes that do not exist
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -35,7 +39,6 @@ app.use((req, res) => {
   });
 });
 
-// Global error handler — must be last
 app.use(errorHandler);
 
 export default app;
