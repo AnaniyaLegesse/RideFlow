@@ -4,6 +4,7 @@ import vehicleRoutes from '../modules/vehicles/vehicle.routes.js';
 import bookingRoutes from '../modules/bookings/booking.routes.js';
 import analyticsRoutes from '../modules/analytics/analytics.routes.js';
 import inquiryRoutes from '../modules/inquiries/inquiry.routes.js';
+import adminRoutes from '../modules/admin/admin.routes.js';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/vehicles', vehicleRoutes);
 router.use('/bookings', bookingRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/inquiries', inquiryRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;
