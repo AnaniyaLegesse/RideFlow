@@ -10,7 +10,6 @@ const dashboardRoutes = {
   BOOKINGS: '/dashboard/bookings',
   ACCOUNT: '/dashboard/account',
   'CRYPTO WALLET': '/dashboard/crypto',
-  HELP: '/dashboard/help',
 };
 
 const tabsForNav = DASHBOARD_TABS.map((tab) => ({

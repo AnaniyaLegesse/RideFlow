@@ -1,8 +1,11 @@
+// app/admin/blog/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { BlogPublisherTab } from '@/features/admin/components/tabs/BlogPublisherTab';
+import { Button } from '@/components/ui/Button';
+import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader';
+import { BlogPublisherTable } from '@/features/admin/components/BlogPublisherTable';
 import { fetchAdminBlogs, deleteBlogPost } from '@/features/admin/services/adminService';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import type { BlogPost } from '@/features/admin/types';
@@ -63,16 +66,21 @@ export default function AdminBlogPage() {
   if (error) return <ErrorBanner message={error} />;
 
   return (
-    <BlogPublisherTab
-      blogs={blogs}
-      editingBlogId={editingBlogId}
-      blogEditForm={blogEditForm}
-      onBlogEditFormChange={setBlogEditForm}
-      onSaveBlog={handleSave}
-      onCancelBlog={handleCancel}
-      onPurgeBlog={handlePurge}
-      onCreateBlog={handleCreate}
-      onEditBlogRoute={handleEditRoute}
-    />
+    <div className="space-y-6">
+      <AdminSectionHeader
+        title="EDITORIAL LEDGER"
+        action={<Button variant="primary" label="+ Create Blog Post" onClick={handleCreate} />}
+      />
+      <BlogPublisherTable
+        blogs={blogs}
+        editingBlogId={editingBlogId}
+        blogEditForm={blogEditForm}
+        onEditFormChange={setBlogEditForm}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onPurge={handlePurge}
+        onNavigateEdit={handleEditRoute}
+      />
+    </div>
   );
 }

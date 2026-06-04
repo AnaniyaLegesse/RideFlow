@@ -2,7 +2,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FleetOverviewTab } from '@/features/admin/components/tabs/FleetOverviewTab';
+import { FleetDispositionGrid } from '@/features/admin/components/grids/FleetDispositionGrid';
+import { FinancialMetricsGrid } from '@/features/admin/components/grids/FinancialMetricsGrid';
+import { FleetFilterBar } from '@/features/admin/components/FleetFilterBar';
+import { FleetOperationTable } from '@/features/admin/components/FleetOperationTable';
+import { filterFleetByStatus } from '@/features/admin/lib/adminAnalytics';
 import {
   fetchAdminFleet,
   fetchHistoricalEarnings,
@@ -41,21 +45,29 @@ export default function AdminFleetPage() {
     loadData();
   }, []);
 
-  if (loading) {
-    return <div className="p-8 text-center">Loading fleet overview...</div>;
-  }
+  const filteredFleet = filterFleetByStatus(fleet, fleetFilter);
 
+  if (loading) return <div className="p-8 text-center">Loading fleet overview...</div>;
   if (error || !analytics || !historicalEarnings) {
     return <ErrorBanner message={error || 'Data unavailable'} />;
   }
 
   return (
-    <FleetOverviewTab
-      fleet={fleet}
-      fleetFilter={fleetFilter}
-      onFleetFilterChange={setFleetFilter}
-      analytics={analytics}
-      historicalEarnings={historicalEarnings}
-    />
+    <div className="animate-in fade-in duration-150 space-y-10">
+      <div className="flex flex-col gap-6">
+        <FinancialMetricsGrid
+          analytics={analytics}
+          historicalEarnings={historicalEarnings}
+        />
+        <FleetDispositionGrid analytics={analytics} />
+      </div>
+
+      <FleetFilterBar
+        fleetFilter={fleetFilter}
+        onFilterChange={setFleetFilter}
+      />
+
+      <FleetOperationTable fleet={filteredFleet} />
+    </div>
   );
 }

@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FleetManagementTab } from '@/features/admin/components/tabs/FleetManagementTab';
+import { Button } from '@/components/ui/Button';
+import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader';
+import { FleetManagementTable } from '@/features/admin/components/FleetManagementTable';
 import { fetchAdminFleet, deleteVehicleAsset } from '@/features/admin/services/adminService';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import type { VehicleAsset } from '@/features/admin/types';
@@ -16,6 +18,7 @@ export default function AdminVehiclesPage() {
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
   const [vehicleEditForm, setVehicleEditForm] = useState<VehicleAsset | null>(null);
 
+  // Fetch vehicles on mount
   useEffect(() => {
     fetchAdminFleet()
       .then(setFleet)
@@ -23,6 +26,7 @@ export default function AdminVehiclesPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Inline edit handlers
   const handleEdit = useCallback((id: string) => {
     const vehicle = fleet.find((v) => v.id === id);
     if (vehicle) {
@@ -64,16 +68,21 @@ export default function AdminVehiclesPage() {
   if (error) return <ErrorBanner message={error} />;
 
   return (
-    <FleetManagementTab
-      fleet={fleet}
-      editingVehicleId={editingVehicleId}
-      vehicleEditForm={vehicleEditForm}
-      onVehicleEditFormChange={setVehicleEditForm}
-      onSaveVehicle={handleSave}
-      onCancelVehicle={handleCancel}
-      onDeleteVehicle={handleDelete}
-      onCreateVehicle={handleCreate}
-      onEditVehicleRoute={handleEditRoute}
-    />
+    <div className="space-y-6">
+      <AdminSectionHeader
+        title="FLEET PROVISIONING"
+        action={<Button variant="primary" label="+ Add New Vehicle" onClick={handleCreate} />}
+      />
+      <FleetManagementTable
+        fleet={fleet}
+        editingVehicleId={editingVehicleId}
+        vehicleEditForm={vehicleEditForm}
+        onEditFormChange={setVehicleEditForm}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onDelete={handleDelete}
+        onNavigateEdit={handleEditRoute}
+      />
+    </div>
   );
 }
