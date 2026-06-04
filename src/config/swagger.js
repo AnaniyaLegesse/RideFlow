@@ -6,7 +6,7 @@ const options = {
     info: {
       title: 'RideFlow Car Rental API',
       version: '1.0.0',
-      description: 'Production API for a professional car rental and marketplace platform. Built with Node.js, Express, PostgreSQL, and MongoDB.',
+      description: 'Production API for a professional car rental and marketplace platform. Built with Node.js, Express, PostgreSQL, and MongoDB. Includes a Web3 layer for on‑chain rental agreements.',
       contact: {
         name: 'RideFlow Support',
         email: 'support@rideflow.com',
@@ -21,6 +21,15 @@ const options = {
         url: 'https://upbeat-smile-production.up.railway.app/api',
         description: 'Production server',
       },
+    ],
+    tags: [
+      { name: 'Auth' },
+      { name: 'Vehicles' },
+      { name: 'Bookings' },
+      { name: 'Inquiries' },
+      { name: 'Analytics' },
+      { name: 'Admin' },
+      { name: 'Blockchain' },
     ],
     components: {
       securitySchemes: {
@@ -87,6 +96,20 @@ const options = {
             message: { type: 'string', example: 'Does this car have air conditioning?' },
             status: { type: 'string', enum: ['open', 'in_progress', 'resolved', 'closed'] },
             replies: { type: 'array', items: { type: 'object' } },
+          },
+        },
+        BlockchainAgreement: {
+          type: 'object',
+          description: 'On-chain rental agreement recorded on Ethereum Sepolia',
+          properties: {
+            id: { type: 'string', description: 'Blockchain agreement ID' },
+            vehicleId: { type: 'string' },
+            customerWallet: { type: 'string', description: 'Ethereum wallet address' },
+            startDate: { type: 'string', format: 'date' },
+            endDate: { type: 'string', format: 'date' },
+            totalPrice: { type: 'string', description: 'Price as string (big integer)' },
+            currency: { type: 'string' },
+            timestamp: { type: 'string', description: 'Unix timestamp' },
           },
         },
         Error: {
