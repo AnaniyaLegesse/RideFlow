@@ -1,15 +1,14 @@
-// app/checkout/CheckoutClient.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useWalletConnection } from '@/hooks/useWalletConnection';
 import { CheckoutDriverForm } from '@/features/fleet-catalog/components/checkout/CheckoutDriverForm';
 import { CheckoutHeader } from '@/features/fleet-catalog/components/checkout/CheckoutHeader';
 import { CheckoutPaymentSection } from '@/features/fleet-catalog/components/checkout/CheckoutPaymentSection';
 import { CheckoutSummarySidebar } from '@/features/fleet-catalog/components/checkout/CheckoutSummarySidebar';
 import {
   getFleetVehicleById,
-  connectCheckoutWallet,
   getInvoiceDepositAddress,
 } from '@/features/fleet-catalog/services/fleetCatalogService';
 import {
@@ -29,11 +28,17 @@ interface CheckoutClientProps {
 
 export default function CheckoutClient({ carId, rateId }: CheckoutClientProps) {
   const router = useRouter();
+
+  // Real wallet connection
+  const { address, isConnected, connectWallet, disconnectWallet, isConnecting } = useWalletConnection();
+
+  // Car & rate state
   const [car, setCar] = useState<FleetVehicle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const selectedRate = isRentalRate(rateId) ? rateId : 'best';
 
+  // Driver form state
   const [email, setEmail] = useState('kidustilahunet@gmail.com');
   const [firstName, setFirstName] = useState('Kidus');
   const [lastName, setLastName] = useState('Tilahun');
@@ -42,12 +47,11 @@ export default function CheckoutClient({ carId, rateId }: CheckoutClientProps) {
   const [company, setCompany] = useState('');
   const [isAgeConfirmed, setIsAgeConfirmed] = useState(true);
 
+  // Payment state (still mock for now)
   const [selectedCrypto, setSelectedCrypto] = useState<CheckoutCryptoAsset>('USDC');
-  const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // Load car data
   useEffect(() => {
     if (!carId) {
       setError('No car selected');
@@ -68,33 +72,20 @@ export default function CheckoutClient({ carId, rateId }: CheckoutClientProps) {
   const cryptoAmount = getCryptoAmount(selectedCrypto, basePrice);
   const depositAddress = getInvoiceDepositAddress(selectedCrypto);
 
-  const handleWalletConnect = useCallback(async () => {
-    if (isWalletConnected) {
-      setIsWalletConnected(false);
-      setWalletAddress(null);
-      return;
+  // Real wallet connect handler (replaces mock)
+  const handleWalletConnect = () => {
+    if (isConnected) {
+      disconnectWallet();
+    } else {
+      connectWallet();
     }
-    setIsConnecting(true);
-    try {
-      const { address } = await connectCheckoutWallet();
-      setIsWalletConnected(true);
-      setWalletAddress(address);
-    } finally {
-      setIsConnecting(false);
-    }
-  }, [isWalletConnected]);
+  };
 
   const copyInvoiceAddress = useCallback(async () => {
     await navigator.clipboard.writeText(depositAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }, [depositAddress]);
-
-  const completeReservation = useCallback(() => {
-    alert(
-      `Settle Request Executed using Blockchain Payload parameters: Asset Type [${selectedCrypto}], Wallet Link [${isWalletConnected ? 'YES' : 'NO'}].`
-    );
-  }, [isWalletConnected, selectedCrypto]);
 
   const goBack = () => router.push('/fleetcatalog');
 
@@ -129,21 +120,27 @@ export default function CheckoutClient({ carId, rateId }: CheckoutClientProps) {
               selectedCrypto={selectedCrypto}
               setSelectedCrypto={setSelectedCrypto}
               cryptoAmount={cryptoAmount}
-              isWalletConnected={isWalletConnected}
+              isWalletConnected={isConnected}
               isConnecting={isConnecting}
-              walletAddress={walletAddress}
+              walletAddress={address ?? null}
               copied={copied}
               depositAddress={depositAddress}
               onWalletConnect={handleWalletConnect}
               onCopyAddress={copyInvoiceAddress}
             />
+
+            {/* Payment button is disabled for now – just wallet connection works */}
+            <div className="pt-4">
+              <button
+                disabled={true}
+                className="w-full h-12 bg-gray-400 text-white font-bold uppercase tracking-wide cursor-not-allowed"
+              >
+                Payment coming soon (backend integration)
+              </button>
+            </div>
           </div>
 
-          <CheckoutSummarySidebar
-            car={car}
-            selectedRate={selectedRate}
-            onComplete={completeReservation}
-          />
+          <CheckoutSummarySidebar car={car} selectedRate={selectedRate} onComplete={() => {}} />
         </div>
       </div>
     </div>
