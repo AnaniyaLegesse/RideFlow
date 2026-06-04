@@ -128,6 +128,33 @@ const options = {
           },
         },
       },
+      // Add the missing response components
+      responses: {
+        Unauthorized: {
+          description: 'Missing or invalid JWT token',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+            },
+          },
+        },
+        Forbidden: {
+          description: 'Insufficient permissions',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+            },
+          },
+        },
+        NotFound: {
+          description: 'Resource not found',
+          content: {
+            'application/json': {
+              schema: { $ref: '#/components/schemas/Error' },
+            },
+          },
+        },
+      },
     },
   },
   apis: ['./src/modules/**/*.routes.js'],
