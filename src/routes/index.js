@@ -1,3 +1,4 @@
+import blockchainRoutes from "../modules/blockchain/blockchain.routes.js";
 import { Router } from 'express';
 import authRoutes from '../modules/auth/auth.routes.js';
 import vehicleRoutes from '../modules/vehicles/vehicle.routes.js';
@@ -23,5 +24,6 @@ router.use('/bookings', bookingRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/inquiries', inquiryRoutes);
 router.use('/admin', adminRoutes);
+router.use("/blockchain", blockchainRoutes);
 
 export default router;

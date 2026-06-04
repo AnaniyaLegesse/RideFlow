@@ -12,6 +12,9 @@ const requiredVars = [
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
   'CLOUDINARY_API_SECRET',
+  "INFURA_RPC_URL",
+  "WALLET_PRIVATE_KEY",
+  "CONTRACT_ADDRESS",
 ];
 
 for (const key of requiredVars) {
@@ -35,4 +38,7 @@ export const env = {
     apiKey: process.env.CLOUDINARY_API_KEY,
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
+  infuraRpcUrl: process.env.INFURA_RPC_URL,
+  walletPrivateKey: process.env.WALLET_PRIVATE_KEY,
+  contractAddress: process.env.CONTRACT_ADDRESS,
 };

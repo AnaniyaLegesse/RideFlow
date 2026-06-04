@@ -1,5 +1,6 @@
 import prisma from '../../db/postgres.js';
 import Vehicle from '../vehicles/vehicle.model.js';
+import { recordAgreementOnChain } from "../blockchain/blockchain.service.js";
 
 const calculateBookingPrice = (startDate, endDate, pricePerDay) => {
   const start = new Date(startDate);
@@ -222,6 +223,30 @@ export const updateBookingStatus = async (bookingId, { status, cancellationReaso
     data,
     include: { user: { select: { id: true, firstName: true, lastName: true, email: true } } },
   });
+
+  // --- BLOCKCHAIN INTEGRATION: record agreement on-chain when confirmed ---
+  if (status === 'confirmed') {
+    try {
+      // For the hackathon demo, we use a hardcoded test wallet.
+      // In production, you would retrieve the customer's actual wallet address
+      // from the user record or the booking metadata.
+      const customerWallet = "0xE63B9427116EDCB23d36DCF643DFB91b79125e5a";
+      await recordAgreementOnChain({
+        vehicleId: booking.vehicleId,
+        customerWallet: customerWallet,
+        startDate: booking.startDate.toISOString().slice(0, 10),
+        endDate: booking.endDate.toISOString().slice(0, 10),
+        totalPrice: booking.totalPrice,
+        currency: booking.currency,
+      });
+      console.log('✅ On-chain agreement recorded');
+    } catch (error) {
+      console.error('❌ Failed to record on-chain:', error.message);
+      // The booking status update still succeeds; blockchain recording failure
+      // does not break the normal booking flow.
+    }
+  }
+  // --- END BLOCKCHAIN INTEGRATION ---
 
   return updated;
 };
