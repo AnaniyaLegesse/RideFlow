@@ -1,0 +1,19 @@
+// app/checkout/page.tsx
+import { Suspense } from 'react';
+import CheckoutClient from '../../features/fleet-catalog/components/checkout/CheckoutClient';
+
+interface PageProps {
+  searchParams: Promise<{ carId?: string; rateId?: string }> | { carId?: string; rateId?: string };
+}
+
+export default async function CheckoutPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const carId = params.carId ?? null;
+  const rateId = params.rateId ?? null;
+
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Loading checkout...</div>}>
+      <CheckoutClient carId={carId} rateId={rateId} />
+    </Suspense>
+  );
+}
