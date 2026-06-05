@@ -1,183 +1,255 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createVehicle } from '@/features/admin/services/adminService';
+import { ErrorBanner } from '@/components/ui/ErrorBanner';
 
 export default function CreateVehiclePage() {
   const router = useRouter();
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [vehicleData, setVehicleData] = useState({
-    modelName: '',
-    plateNumber: '',
-    batteryOrFuel: '',
-    currentLocation: '',
-    status: 'Available',
-    // Catalog Filter Parameters integrated from the Fleet Categories architecture
-    category: 'SEDAN',
-    powertrain: 'BEV',
-    transmission: 'AUTOMATIC',
-    // Capacity metrics for client filter matching
-    seatsCount: '5',
-    bagsCount: '3',
-    imageFile: null as File | null
+  const [form, setForm] = useState({
+    make: '',
+    model: '',
+    year: new Date().getFullYear(),
+    pricePerDay: 0,
+    category: 'economy',
+    fuelType: 'petrol',
+    transmission: 'automatic',
+    seats: 5,
+    description: '',
+    location: '',
+    features: [] as string[],
+    isAvailable: true,
+    currency: 'EUR',
   });
+  const [featureInput, setFeatureInput] = useState('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addFeature = () => {
+    if (featureInput.trim()) {
+      setForm(prev => ({ ...prev, features: [...prev.features, featureInput.trim()] }));
+      setFeatureInput('');
+    }
+  };
+  const removeFeature = (index: number) => {
+    setForm(prev => ({ ...prev, features: prev.features.filter((_, i) => i !== index) }));
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVehicleData({ ...vehicleData, imageFile: file });
-      setImagePreview(URL.createObjectURL(file));
+    if (e.target.files) {
+      setImageFiles(Array.from(e.target.files));
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vehicleData.modelName || !vehicleData.plateNumber) {
-      return alert('Model Name and Plate Number fields are mandatory parameters.');
+    setLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === 'features') {
+          (value as string[]).forEach(f => formData.append('features', f));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+      imageFiles.forEach(file => formData.append('images', file));
+
+      await createVehicle(formData);
+      router.push('/admin/vehicles');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-    
-    console.log('Deploying Configured Catalog Asset Payload:', vehicleData);
-    alert(`Vehicle asset "${vehicleData.modelName}" successfully categorized and linked to operational fleet.`);
-    router.push('/admin');
   };
 
   return (
-    <div className="w-full min-h-screen bg-admin-surface text-brand-ink pt-8 pb-24 px-4 md:px-12">
-      <div className="max-w-[768px] mx-auto">
-        <button 
-          onClick={() => router.push('/admin')} 
-          className="text-xs font-bold tracking-wide text-brand-muted hover:text-brand-ink transition-colors uppercase bg-transparent border-none cursor-pointer mb-12"
-        >
-          ← Cancel and Return to Overview
-        </button>
-
-        <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in duration-150">
-          <h2 className="uppercase text-brand-ink text-2xl font-bold">Register Fleet Vehicle Asset</h2>
-          
-          {/* IMAGE UPLOAD FIELD BOX */}
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold tracking-wide text-brand-muted uppercase block">Vehicle Asset Media Profile</label>
-            <div className="border border-dashed border-admin-border-strong p-6 text-center relative bg-admin-surface-muted transition-colors hover:border-brand-ink rounded-none">
-              {imagePreview ? (
-                <div className="space-y-4">
-                  <img src={imagePreview} alt="Asset Preview" className="max-h-[220px] mx-auto object-contain border border-admin-border" />
-                  <button type="button" onClick={() => { setImagePreview(null); setVehicleData({ ...vehicleData, imageFile: null }); }} className="text-brand-danger text-xs uppercase font-bold tracking-wider hover:underline block mx-auto bg-transparent border-none cursor-pointer">Remove Profile Image</button>
-                </div>
-              ) : (
-                <div className="py-6">
-                  <span className="text-[13px] font-light text-brand-muted block mb-2">Drop driving blueprint image here or click to browse</span>
-                  <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                  <span className="text-[11px] font-bold text-brand-primary uppercase tracking-wider">Select Media Token</span>
-                </div>
-              )}
-            </div>
+    <div className="max-w-3xl mx-auto py-8 px-4">
+      <h1 className="text-2xl font-bold uppercase text-brand-ink mb-6">Add New Vehicle</h1>
+      {error && <ErrorBanner message={error} />}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Two columns for basic info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Make *</label>
+            <input
+              type="text"
+              required
+              value={form.make}
+              onChange={e => setForm({ ...form, make: e.target.value })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
           </div>
-
-          <div className="space-y-6">
-            {/* Model Specification Input */}
-            <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-              <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Model Specification</label>
-              <input type="text" placeholder="e.g. BMW iX3 M Sport" value={vehicleData.modelName} onChange={e => setVehicleData({...vehicleData, modelName: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" />
-            </div>
-
-            {/* Plate Identification Input */}
-            <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-              <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Plate Identification Number</label>
-              <input type="text" placeholder="e.g. AA-2-A8944" value={vehicleData.plateNumber} onChange={e => setVehicleData({...vehicleData, plateNumber: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 font-mono uppercase text-[15px]" />
-            </div>
-
-            {/* Core Operational Matrix Grid (Energy / Hub Station) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-                <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Energy Matrix Capacity</label>
-                <input type="text" placeholder="e.g. 94%" value={vehicleData.batteryOrFuel} onChange={e => setVehicleData({...vehicleData, batteryOrFuel: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" />
-              </div>
-              <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-                <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Initial Station Hub</label>
-                <input type="text" placeholder="e.g. Bole Hub" value={vehicleData.currentLocation} onChange={e => setVehicleData({...vehicleData, currentLocation: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" />
-              </div>
-            </div>
-
-            {/* CATALOG FILTER MATRIX BLOCK (Category / Powertrain / Transmission Alignment) */}
-            <div className="border-t border-admin-border pt-4 mt-2">
-              <span className="text-xs font-bold tracking-wide text-brand-ink uppercase block mb-4">Consumer Catalog Taxonomy Filters</span>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {/* Category Classification */}
-                <div className="relative pt-5 pb-1 border-b border-admin-border-strong">
-                  <label className="absolute top-0 left-0 text-[10px] font-bold tracking-wide text-brand-muted uppercase">Category Variant</label>
-                  <select value={vehicleData.category} onChange={e => setVehicleData({...vehicleData, category: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 appearance-none rounded-none text-[14px] font-medium cursor-pointer">
-                    <option value="SEDAN">LUXURY SEDAN</option>
-                    <option value="SUV">SPORTS ACTIVITY VEHICLE (SUV)</option>
-                    <option value="COUPE">COUPE / PERFORMANCE</option>
-                  </select>
-                </div>
-
-                {/* Powertrain Architecture */}
-                <div className="relative pt-5 pb-1 border-b border-admin-border-strong">
-                  <label className="absolute top-0 left-0 text-[10px] font-bold tracking-wide text-brand-muted uppercase">Engine Architecture</label>
-                  <select value={vehicleData.powertrain} onChange={e => setVehicleData({...vehicleData, powertrain: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 appearance-none rounded-none text-[14px] font-medium cursor-pointer">
-                    <option value="BEV">BATTERY ELECTRIC (BEV)</option>
-                    <option value="PHEV">PLUG-IN HYBRID (PHEV)</option>
-                    <option value="ICE">INTERNAL COMBUSTION (ICE)</option>
-                  </select>
-                </div>
-
-                {/* Transmission Configuration */}
-                <div className="relative pt-5 pb-1 border-b border-admin-border-strong">
-                  <label className="absolute top-0 left-0 text-[10px] font-bold tracking-wide text-brand-muted uppercase">Gearbox Matrix</label>
-                  <select value={vehicleData.transmission} onChange={e => setVehicleData({...vehicleData, transmission: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 appearance-none rounded-none text-[14px] font-medium cursor-pointer">
-                    <option value="AUTOMATIC">AUTOMATIC TRANSMISSION</option>
-                    <option value="MANUAL">MANUAL GEARSHIFT</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* NEW: CAPACITY ASSIGNMENT INPUTS (Seats / Luggage Bags) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-                <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Passenger Capacity (Seats)</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max="9"
-                  placeholder="e.g. 5" 
-                  value={vehicleData.seatsCount} 
-                  onChange={e => setVehicleData({...vehicleData, seatsCount: e.target.value})} 
-                  className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" 
-                />
-              </div>
-              <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-                <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Luggage Capacity (Bags)</label>
-                <input 
-                  type="number" 
-                  min="0" 
-                  max="9"
-                  placeholder="e.g. 3" 
-                  value={vehicleData.bagsCount} 
-                  onChange={e => setVehicleData({...vehicleData, bagsCount: e.target.value})} 
-                  className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" 
-                />
-              </div>
-            </div>
-
-            {/* Operational Status Select */}
-            <div className="relative pt-5 pb-1 border-b border-admin-border-strong">
-              <label className="absolute top-0 left-0 text-[11px] font-bold tracking-wide text-brand-muted uppercase">Operational State Assignment</label>
-              <select value={vehicleData.status} onChange={e => setVehicleData({...vehicleData, status: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 appearance-none rounded-none text-[15px] cursor-pointer">
-                <option value="Available">AVAILABLE FOR IMMEDIATE DISPATCH</option>
-                <option value="On Rental">ACTIVE RENTAL LEASE</option>
-                <option value="Maintenance">WORKSHOP SERVICE INDEX</option>
-              </select>
-            </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Model *</label>
+            <input
+              type="text"
+              required
+              value={form.model}
+              onChange={e => setForm({ ...form, model: e.target.value })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
           </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Year *</label>
+            <input
+              type="number"
+              required
+              min="1900"
+              max={new Date().getFullYear() + 1}
+              value={form.year}
+              onChange={e => setForm({ ...form, year: parseInt(e.target.value) })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Price per Day *</label>
+            <input
+              type="number"
+              required
+              min="0"
+              step="0.01"
+              value={form.pricePerDay}
+              onChange={e => setForm({ ...form, pricePerDay: parseFloat(e.target.value) })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Category *</label>
+            <select
+              value={form.category}
+              onChange={e => setForm({ ...form, category: e.target.value })}
+              className="w-full h-10 border border-admin-border px-3"
+            >
+              <option value="economy">Economy</option>
+              <option value="compact">Compact</option>
+              <option value="suv">SUV</option>
+              <option value="luxury">Luxury</option>
+              <option value="van">Van</option>
+              <option value="electric">Electric</option>
+              <option value="convertible">Convertible</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Fuel Type *</label>
+            <select
+              value={form.fuelType}
+              onChange={e => setForm({ ...form, fuelType: e.target.value })}
+              className="w-full h-10 border border-admin-border px-3"
+            >
+              <option value="petrol">Petrol</option>
+              <option value="diesel">Diesel</option>
+              <option value="electric">Electric</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Transmission *</label>
+            <select
+              value={form.transmission}
+              onChange={e => setForm({ ...form, transmission: e.target.value })}
+              className="w-full h-10 border border-admin-border px-3"
+            >
+              <option value="manual">Manual</option>
+              <option value="automatic">Automatic</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Seats *</label>
+            <input
+              type="number"
+              required
+              min="1"
+              max="20"
+              value={form.seats}
+              onChange={e => setForm({ ...form, seats: parseInt(e.target.value) })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Location (optional)</label>
+            <input
+              type="text"
+              value={form.location}
+              onChange={e => setForm({ ...form, location: e.target.value })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Currency (default EUR)</label>
+            <input
+              type="text"
+              value={form.currency}
+              onChange={e => setForm({ ...form, currency: e.target.value.toUpperCase() })}
+              className="w-full h-10 border border-admin-border px-3"
+            />
+          </div>
+        </div>
 
-          <button type="submit" className="h-12 px-10 bg-brand-ink text-white uppercase rounded-none hover:bg-brand-primary transition-colors border-none cursor-pointer text-sm font-bold tracking-wide">
-            Commit Vehicle Asset
+        <div className="space-y-1">
+          <label className="text-admin-label uppercase text-brand-muted">Description</label>
+          <textarea
+            rows={4}
+            value={form.description}
+            onChange={e => setForm({ ...form, description: e.target.value })}
+            className="w-full border border-admin-border p-3"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-admin-label uppercase text-brand-muted">Features</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={featureInput}
+              onChange={e => setFeatureInput(e.target.value)}
+              className="flex-1 h-10 border border-admin-border px-3"
+              placeholder="e.g., Bluetooth"
+            />
+            <button type="button" onClick={addFeature} className="px-4 bg-brand-primary text-white">Add</button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {form.features.map((f, i) => (
+              <span key={i} className="bg-admin-surface-muted px-2 py-1 text-sm flex items-center gap-1">
+                {f}
+                <button type="button" onClick={() => removeFeature(i)} className="text-brand-danger">✕</button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-admin-label uppercase text-brand-muted">Images (max 10, JPEG/PNG/WebP)</label>
+          <input
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleImageChange}
+            className="block w-full"
+          />
+          <div className="text-xs text-brand-muted">Selected: {imageFiles.length} file(s)</div>
+        </div>
+
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="isAvailable"
+            checked={form.isAvailable}
+            onChange={e => setForm({ ...form, isAvailable: e.target.checked })}
+          />
+          <label htmlFor="isAvailable" className="text-admin-label uppercase text-brand-muted">Available for booking</label>
+        </div>
+
+        <div className="flex gap-4 pt-4">
+          <button type="submit" disabled={loading} className="px-6 py-2 bg-brand-primary text-white uppercase font-bold">
+            {loading ? 'Creating...' : 'Create Vehicle'}
           </button>
-        </form>
-      </div>
+          <button type="button" onClick={() => router.back()} className="px-6 py-2 border border-admin-border uppercase">Cancel</button>
+        </div>
+      </form>
     </div>
   );
 }

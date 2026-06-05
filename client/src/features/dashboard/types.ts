@@ -4,7 +4,6 @@ export const DASHBOARD_TABS: readonly DashboardTab[] = [
   'BOOKINGS',
   'ACCOUNT',
   'CRYPTO WALLET',
-  'HELP',
 ] as const;
 
 export type AccountSubTab = 'personal' | 'email' | 'address';

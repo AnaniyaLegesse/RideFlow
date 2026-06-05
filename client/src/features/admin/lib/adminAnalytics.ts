@@ -1,9 +1,5 @@
-import type {
-  FleetAnalytics,
-  HistoricalEarnings,
-  PendingTx,
-  VehicleAsset,
-} from '@/features/admin/types';
+// src/features/admin/lib/adminAnalytics.ts
+import type { FleetAnalytics, HistoricalEarnings, PendingTx, VehicleAsset } from '../types';
 
 export const computeFleetAnalytics = (
   fleet: VehicleAsset[],
@@ -15,16 +11,8 @@ export const computeFleetAnalytics = (
   const countOnRental = fleet.filter((v) => v.status === 'On Rental').length;
   const countMaintenance = fleet.filter((v) => v.status === 'Maintenance').length;
 
-  const averageEnergy =
-    totalAssets > 0
-      ? Math.round(
-          fleet.reduce(
-            (acc, current) =>
-              acc + parseInt(current.batteryOrFuel.replace('%', '') || '0', 10),
-            0
-          ) / totalAssets
-        )
-      : 0;
+  // Backend doesn't have numeric battery/fuel; set averageEnergy to 0 (or calculate from fuelType if needed)
+  const averageEnergy = 0;
 
   const pendingVolumeUSD = pendingTransactions.reduce(
     (acc, tx) => acc + parseFloat(tx.amountUSD.replace('$', '') || '0'),
@@ -42,13 +30,8 @@ export const computeFleetAnalytics = (
   };
 };
 
-export const filterFleetByStatus = (
-  fleet: VehicleAsset[],
-  fleetFilter: string
-): VehicleAsset[] =>
-  fleet.filter(
-    (v) => fleetFilter === 'ALL' || v.status.toUpperCase() === fleetFilter
-  );
+export const filterFleetByStatus = (fleet: VehicleAsset[], fleetFilter: string): VehicleAsset[] =>
+  fleet.filter((v) => fleetFilter === 'ALL' || v.status.toUpperCase() === fleetFilter);
 
 export const formatUsd = (value: number, fractionDigits = 2): string =>
   value.toLocaleString('en-US', {

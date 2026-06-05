@@ -1,10 +1,9 @@
-// app/login/LoginClient.tsx
 'use client';
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
+import { api } from '@/lib/api/client';
 
 interface LoginClientProps {
   hasCredentialsError: boolean;
@@ -22,32 +21,31 @@ export default function LoginClient({ hasCredentialsError }: LoginClientProps) {
     setFormError('');
     setIsSubmitting(true);
 
-    const result = await signIn('credentials', {
-      email,
-      password,
-      redirect: false,
-      redirectTo: '/',
-    });
+    try {
+      const result = await api.post<{ user: any; token: string }>('/auth/login', { email, password });
 
-    if (result?.error) {
-      setFormError('Invalid email or password');
+      localStorage.setItem('accessToken', result.token);
+      localStorage.setItem('userRole', result.user.role);
+
+      document.cookie = `accessToken=${result.token}; path=/; max-age=604800; SameSite=Lax`;
+      document.cookie = `userRole=${result.user.role}; path=/; max-age=604800; SameSite=Lax`;
+
+
+      if (result.user.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setFormError(err.message || 'Invalid email or password');
+    } finally {
       setIsSubmitting(false);
-      return;
-    }
-
-    // After successful login, fetch the session to check user role
-    const session = await fetch('/api/auth/session').then((res) => res.json());
-    if (session?.user?.role === 'admin') {
-      router.push('/admin');
-    } else {
-      router.push('/dashboard');
     }
   };
 
   return (
     <div className="selection-admin min-h-screen w-full bg-admin-surface">
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
-        {/* Left column – Hero / Brand (unchanged) */}
         <div className="relative hidden lg:flex flex-col justify-between bg-brand-primary p-12 overflow-hidden">
           <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
           <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-white/5 blur-3xl" />
@@ -67,19 +65,12 @@ export default function LoginClient({ hasCredentialsError }: LoginClientProps) {
             </p>
             <div className="flex gap-4">
               <div className="flex -space-x-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-white/20 overflow-hidden">
-                    <div className="w-full h-full bg-white/30" />
-                  </div>
-                ))}
               </div>
-              <span className="text-sm text-white/70">Trusted by 500+ drivers</span>
             </div>
           </div>
           <div className="relative z-10 text-xs text-white/40">© 2026 RideFlow – All rights reserved</div>
         </div>
 
-        {/* Right column – Login form (unchanged) */}
         <div className="flex items-center justify-center px-6 py-12 md:px-10 lg:px-16">
           <div className="w-full max-w-md">
             <div className="mb-8">
@@ -92,7 +83,9 @@ export default function LoginClient({ hasCredentialsError }: LoginClientProps) {
 
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-1">
-                <label htmlFor="email" className="text-admin-label uppercase text-brand-secondary block">Email address</label>
+                <label htmlFor="email" className="text-admin-label uppercase text-brand-secondary block">
+                  Email address
+                </label>
                 <input
                   id="email"
                   name="email"
@@ -107,8 +100,15 @@ export default function LoginClient({ hasCredentialsError }: LoginClientProps) {
 
               <div className="space-y-1">
                 <div className="flex justify-between items-baseline">
-                  <label htmlFor="password" className="text-admin-label uppercase text-brand-secondary block">Password</label>
-                  <Link href="/forgot-password" className="text-admin-body-sm text-brand-muted hover:text-brand-primary transition-colors">Forgot password?</Link>
+                  <label htmlFor="password" className="text-admin-label uppercase text-brand-secondary block">
+                    Password
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-admin-body-sm text-brand-muted hover:text-brand-primary transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
                 </div>
                 <input
                   id="password"
@@ -122,7 +122,11 @@ export default function LoginClient({ hasCredentialsError }: LoginClientProps) {
                 />
               </div>
 
-              {(hasCredentialsError || formError) && <p className="text-admin-body-sm font-medium text-brand-danger">Invalid email or password</p>}
+              {(hasCredentialsError || formError) && (
+                <p className="text-admin-body-sm font-medium text-brand-danger">
+                  Invalid email or password
+                </p>
+              )}
 
               <button
                 type="submit"
@@ -136,7 +140,10 @@ export default function LoginClient({ hasCredentialsError }: LoginClientProps) {
             <div className="mt-8 text-center">
               <p className="text-admin-body-sm text-brand-muted">
                 Don’t have an account?{' '}
-                <Link href="/signup" className="font-bold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover">
+                <Link
+                  href="/signup"
+                  className="font-bold text-brand-primary underline underline-offset-4 hover:text-brand-primary-hover"
+                >
                   Create one now
                 </Link>
               </p>

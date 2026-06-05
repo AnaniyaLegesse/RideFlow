@@ -79,15 +79,6 @@ export const FleetFilterPanel = ({
           </div>
         </FilterSection>
 
-        <FilterSection title="Premium selections">
-          <FilterChip
-            label="Premium Fleets Only"
-            icon={<Gem className="w-4 h-4" strokeWidth={1.5} />}
-            isActive={filters.isPremiumSelected}
-            onClick={() => onUpdate('isPremiumSelected', !filters.isPremiumSelected)}
-          />
-        </FilterSection>
-
         <FilterSection title="Features">
           <div className="flex flex-wrap gap-2">
             {[
@@ -143,18 +134,6 @@ export const FleetFilterPanel = ({
           </div>
         </FilterSection>
 
-        <FilterSection title="Primary driver age">
-          <div className="flex flex-wrap gap-2">
-            {['21', '22', '23', '24', '25+'].map((age) => (
-              <FilterChip
-                key={age}
-                label={age}
-                isActive={filters.driverAge === age}
-                onClick={() => onUpdate('driverAge', age)}
-              />
-            ))}
-          </div>
-        </FilterSection>
       </div>
 
       <div className="p-4 bg-admin-surface border-t border-admin-border">

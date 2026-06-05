@@ -1,107 +1,125 @@
-'use client';
+// ─── Server Component — NO 'use client' ──────────────────────────────────────
+// FleetCatalogClient handles all interactivity. This file owns metadata + schemas.
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { FleetCatalogHeader } from '@/features/fleet-catalog/components/FleetCatalogHeader';
-import { FleetCatalogTabBar } from '@/features/fleet-catalog/components/FleetCatalogTabBar';
-import { FleetCatalogVehicleGrid } from '@/features/fleet-catalog/components/FleetCatalogVehicleGrid';
-import { CarDetailPanel } from '@/features/fleet-catalog/components/catalog/CarDetailPanel';
-import { FleetFilterPanel } from '@/features/fleet-catalog/components/filters/FleetFilterPanel';
-import { FleetCatalogShell } from '@/features/fleet-catalog/components/FleetCatalogShell';
-import { fetchFleetVehicles } from '@/features/fleet-catalog/services/fleetCatalogService';
-import {
-  DEFAULT_FLEET_FILTERS,
-  filterFleetVehicles,
-} from '@/features/fleet-catalog/lib/fleetCatalogFilters';
-import { ErrorBanner } from '@/components/ui/ErrorBanner';
-import type { FleetVehicle, FleetCatalogFilters, RentalRate } from '@/features/fleet-catalog/types';
+import type { Metadata } from 'next'
+import { Suspense } from 'react'
+import FleetCatalogClient from './FleetCatalogClient'
+
+// ─── Site URL ─────────────────────────────────────────────────────────────────
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000/'
+
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
+
+  title: 'Rent a Vehicle — Browse Our Full Fleet | RideFlow',
+
+  description:
+    'Browse SUVs, sedans, electric vehicles, luxury cars, and pickup trucks available to rent. Filter by type, fuel, and price. Pay with ETH via MetaMask. Book in under 3 minutes.',
+
+
+
+  alternates: {
+    canonical: '/fleet',
+  },
+
+  
+  openGraph: {
+    type: 'website',
+    url: '/fleet',
+    siteName: 'RideFlow',
+    locale: 'en_US',
+    title: 'Browse Our Full Vehicle Fleet — Rent with Crypto | RideFlow',
+    description:
+      'SUVs, sedans, EVs, luxury cars, and more. Filter by type, fuel, and price range. Pay securely with ETH via MetaMask. Instant booking confirmation.',
+    images: [
+      {
+        url: 'https://i.postimg.cc/Bnz1Y3jP/fleet.jpg', // host on your own domain
+        width: 1200,
+        height: 630,
+        alt: 'RideFlow vehicle fleet — cars available to rent with crypto',
+        type: 'image/jpeg',
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    site: '@RideFlow',    // ← replace with your actual handle
+    creator: '@RideFlow', // ← replace with your actual handle
+    title: 'Browse & Rent Vehicles — Pay with ETH | RideFlow',
+    description:
+      'Filter SUVs, EVs, luxury cars and more. Pay with MetaMask. Book in under 3 minutes.',
+    images: {
+      url: 'https://i.postimg.cc/Bnz1Y3jP/fleet.jpg',
+      alt: 'RideFlow fleet catalog — vehicles available to rent',
+    },
+  },
+}
+
+// ─── JSON-LD Schemas ──────────────────────────────────────────────────────────
+
+// ItemList schema — tells Google this is a catalog/listing page.
+// Google can show individual vehicle entries as rich results.
+const itemListSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ItemList',
+  name: 'RideFlow Vehicle Fleet',
+  description: 'Browse all vehicles available to rent on RideFlow, including SUVs, sedans, electric vehicles, luxury cars, hatchbacks, and pickup trucks.',
+  url: `${SITE_URL}/fleet`,
+}
+
+// Service schema — describes what RideFlow offers on this page.
+const serviceSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  name: 'Vehicle Rental with Crypto Payment',
+  provider: {
+    '@type': 'Organization',
+    name: 'RideFlow',
+    url: SITE_URL,
+  },
+  serviceType: 'Vehicle Rental',
+  description:
+    'Rent SUVs, sedans, electric vehicles, luxury cars, hatchbacks, and pickup trucks. Pay securely with ETH via MetaMask on the Ethereum network.',
+  areaServed: {
+    '@type': 'Country',
+    name: 'US', // ← update to your actual service area
+  },
+  offers: {
+    '@type': 'Offer',
+    priceCurrency: 'ETH',
+    availability: 'https://schema.org/InStock',
+    url: `${SITE_URL}/fleet`,
+  },
+}
+
+// Breadcrumb schema
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home',  item: SITE_URL },
+    { '@type': 'ListItem', position: 2, name: 'Fleet', item: `${SITE_URL}/fleet` },
+  ],
+}
+
+// ─── Page Component ───────────────────────────────────────────────────────────
 
 export default function FleetCatalogPage() {
-  const router = useRouter();
-  const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeFilter, setActiveFilter] = useState('Recommended');
-  const [selectedCar, setSelectedCar] = useState<FleetVehicle | null>(null);
-  const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
-  const [filters, setFilters] = useState<FleetCatalogFilters>({ ...DEFAULT_FLEET_FILTERS });
-  const detailPanelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetchFleetVehicles()
-      .then(setVehicles)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  const filteredVehicles = filterFleetVehicles(vehicles, activeFilter, filters);
-
-  const handleTabClick = useCallback((tabName: string, triggerPanel?: boolean) => {
-    if (triggerPanel) {
-      setIsFilterPanelOpen(true);
-      return;
-    }
-    setActiveFilter(tabName);
-  }, []);
-
-  const handleCarSelect = useCallback((car: FleetVehicle) => {
-    setSelectedCar(car);
-    setTimeout(() => {
-      detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, 100);
-  }, []);
-
-  const clearAllFilters = useCallback(() => {
-    setFilters({ ...DEFAULT_FLEET_FILTERS });
-  }, []);
-
-  const updateFilter = useCallback(
-    <K extends keyof FleetCatalogFilters>(key: K, value: FleetCatalogFilters[K]) => {
-      setFilters((prev) => ({ ...prev, [key]: value }));
-    },
-    []
-  );
-
-  const startCheckout = useCallback(
-    (car: FleetVehicle, rate: RentalRate) => {
-      router.push(`/checkout?carId=${encodeURIComponent(car.id)}&rateId=${rate}`);
-    },
-    [router]
-  );
-
-  if (loading) return <div className="p-8 text-center">Loading fleet catalog...</div>;
-  if (error) return <ErrorBanner message={error} />;
-
   return (
-    <FleetCatalogShell>
-      <FleetCatalogHeader />
-
-      <FleetCatalogTabBar activeFilter={activeFilter} onTabClick={handleTabClick} />
-
-      <FleetCatalogVehicleGrid
-        vehicles={filteredVehicles}
-        selectedCarId={selectedCar?.id ?? null}
-        onSelectCar={handleCarSelect}
+    <>
+      {/* JSON-LD — parsed by Google before JS executes */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([itemListSchema, serviceSchema, breadcrumbSchema]),
+        }}
       />
 
-      {selectedCar && (
-        <div ref={detailPanelRef} className="transition-all duration-300">
-          <CarDetailPanel
-            car={selectedCar}
-            onClose={() => setSelectedCar(null)}
-            onSelectConfiguration={(rate) => startCheckout(selectedCar, rate)}
-          />
-        </div>
-      )}
-
-      <FleetFilterPanel
-        isOpen={isFilterPanelOpen}
-        filters={filters}
-        resultCount={filteredVehicles.length}
-        onClose={() => setIsFilterPanelOpen(false)}
-        onClearAll={clearAllFilters}
-        onUpdate={updateFilter}
-      />
-    </FleetCatalogShell>
-  );
+      <Suspense fallback={<div className="p-8 text-center">Loading fleet catalog...</div>}>
+        <FleetCatalogClient />
+      </Suspense>
+    </>
+  )
 }
