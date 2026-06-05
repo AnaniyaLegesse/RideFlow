@@ -1,6 +1,6 @@
-// app/login/page.tsx
+import LoginClient from '@/components/auth/LoginClient';
 import { Suspense } from 'react';
-import LoginClient from '../../components/auth/LoginClient';
+
 
 interface PageProps {
   searchParams: Promise<{ error?: string }> | { error?: string };

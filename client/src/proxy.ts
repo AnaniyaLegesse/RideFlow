@@ -1,21 +1,24 @@
-import { auth } from './auth';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export default auth((request) => {
+export function proxy(request: NextRequest) {
+  const token = request.cookies.get('accessToken')?.value;
   const { pathname } = request.nextUrl;
-  const session = request.auth;
 
-  if (pathname.startsWith('/admin') && session?.user.role !== 'admin') {
+  const isPublic = pathname === '/' || pathname.startsWith('/blog') || pathname === '/faq' || pathname === '/login' || pathname === '/signup';
+  if (isPublic) return NextResponse.next();
+
+  if (!token) {
     return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
   }
 
-  if (pathname === '/dashboard' && !session) {
-    return NextResponse.redirect(new URL('/login', request.url));
+  if (pathname.startsWith('/admin')) {
+    const role = request.cookies.get('userRole')?.value;
+    if (role !== 'admin') {
+      return NextResponse.redirect(new URL('/login?error=unauthorized', request.url));
+    }
   }
 
   return NextResponse.next();
-});
+}
 
-export const config = {
-  matcher: ['/dashboard/:path*', '/admin/:path*'],
-};
+export const config = { matcher: ['/admin/:path*', '/dashboard/:path*'] };

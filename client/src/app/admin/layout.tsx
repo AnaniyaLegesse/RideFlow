@@ -1,4 +1,3 @@
-// app/admin/layout.tsx
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -10,8 +9,9 @@ const adminRoutes = [
   { id: 'FLEET OVERVIEW', path: '/admin/fleet', label: 'FLEET OVERVIEW' },
   { id: 'FLEET MANAGEMENT', path: '/admin/vehicles', label: 'FLEET MANAGEMENT' },
   { id: 'BLOG PUBLISHER', path: '/admin/blog', label: 'BLOG PUBLISHER' },
-  { id: 'CRYPTO CLEARING', path: '/admin/crypto', label: 'CRYPTO CLEARING' },
-  { id: 'RESERVATION', path: '/admin/reservations', label: 'RESERVATION' },
+  { id: 'BOOKING', path: '/admin/reservations', label: 'BOOKING' },
+  { id: 'USER MANAGEMENT', path: '/admin/users', label: 'USER MANAGEMENT' },
+  { id: 'PROFILE', path: '/admin/profile', label: 'PROFILE' },
 ];
 
 interface AdminLayoutProps {
@@ -22,7 +22,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Find which tab matches current path
   const activeTab = adminRoutes.find((route) => pathname === route.path)?.id || 'FLEET OVERVIEW';
 
   const handleTabChange = (tabId: string) => {

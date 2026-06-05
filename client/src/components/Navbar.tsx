@@ -1,22 +1,36 @@
-// src/components/Navbar.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { User, Menu, X, Wallet, ChevronDown } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { User, Menu, X, ChevronDown } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useSession, signOut } from 'next-auth/react';
 import { WalletButton } from '@/components/WalletButton';
 import { useWalletConnection } from '@/hooks/useWalletConnection';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDashboardDropdownOpen, setIsDashboardDropdownOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const userRole = session?.user?.role; // 'admin' or 'user'
-  const isAuthenticated = status === 'authenticated';
+  const router = useRouter();
   const { isConnected, connectWallet, disconnectWallet, address } = useWalletConnection();
+
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    const role = localStorage.getItem('userRole');
+    setIsAuthenticated(!!token);
+    setUserRole(role);
+
+    const handleStorageChange = () => {
+      const newToken = localStorage.getItem('accessToken');
+      const newRole = localStorage.getItem('userRole');
+      setIsAuthenticated(!!newToken);
+      setUserRole(newRole);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const publicLinks = [
     { label: 'Home', href: '/' },
@@ -24,45 +38,43 @@ export default function Navbar() {
     { label: 'FAQ', href: '/faq' },
   ];
 
-  // Role‑specific dashboard links (Help removed)
-  const clientMenuItems = [
-    { label: 'Bookings', href: '/dashboard/bookings' },
-    { label: 'Account', href: '/dashboard/account' },
-    { label: 'Crypto Wallet', href: '/dashboard/crypto' },
-  ];
-
-  const adminMenuItems = [
-    { label: 'Fleet Overview', href: '/admin/fleet' },
-    { label: 'Fleet Management', href: '/admin/vehicles' },
-    { label: 'Blog Publisher', href: '/admin/blog' },
-    { label: 'Crypto Clearing', href: '/admin/crypto' },
-    { label: 'Reservations', href: '/admin/reservations' },
-
-  ];
-
-  const dashboardMenuItems = userRole === 'admin' ? adminMenuItems : clientMenuItems;
-
   const isActive = (href: string) => {
     if (href === '/') return pathname === href;
     return pathname.startsWith(href);
   };
 
   const truncateAddress = (addr: string) => `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-  const toggleDashboardDropdown = () => setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
 
-  // If user is not authenticated, clicking the "Dashboard" button goes to login
   const handleDashboardClick = () => {
     if (!isAuthenticated) {
-      window.location.href = '/login';
+      router.push('/login');
     } else {
-      toggleDashboardDropdown();
+      setIsDashboardDropdownOpen(!isDashboardDropdownOpen);
     }
+  };
+
+  const handleDashboardRedirect = () => {
+    if (userRole === 'admin') {
+      router.push('/admin');
+    } else {
+      router.push('/dashboard');
+    }
+    setIsDashboardDropdownOpen(false);
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('userRole');
+    document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+    document.cookie = 'userRole=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+    setIsAuthenticated(false);
+    setUserRole(null);
+    router.push('/login');
   };
 
   return (
     <>
       <nav className="sticky top-0 z-50 w-full h-16 bg-admin-surface border-b border-admin-border px-6 md:px-10 flex items-center justify-between selection:bg-brand-primary/10">
-        {/* Logo */}
         <a href="/" className="flex items-center gap-2.5 no-underline group">
           <div className="relative w-25 h-20 flex items-center justify-center">
             <Image
@@ -77,7 +89,6 @@ export default function Navbar() {
           <span className="sr-only">RideFlow Home</span>
         </a>
 
-        {/* Desktop Public Navigation */}
         <div className="hidden lg:flex items-center gap-1.5 h-full">
           {publicLinks.map((link) => {
             const active = isActive(link.href);
@@ -97,13 +108,11 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Right Side: Wallet + Dashboard Dropdown + Mobile Menu */}
         <div className="flex items-center gap-2 text-brand-ink">
           <div className="hidden sm:block">
             <WalletButton />
           </div>
 
-          {/* Dashboard Dropdown (User Icon) */}
           <div className="relative">
             <button
               onClick={handleDashboardClick}
@@ -115,21 +124,17 @@ export default function Navbar() {
             </button>
 
             {isAuthenticated && isDashboardDropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-admin-surface border border-admin-border shadow-lg z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-admin-surface border border-admin-border shadow-lg z-50">
                 <div className="py-1">
-                  {dashboardMenuItems.map((item) => (
-                    <a
-                      key={item.label}
-                      href={item.href}
-                      onClick={() => setIsDashboardDropdownOpen(false)}
-                      className="block px-4 py-2 text-sm text-brand-ink hover:bg-admin-surface-muted transition-colors"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
+                  <button
+                    onClick={handleDashboardRedirect}
+                    className="w-full text-left px-4 py-2 text-sm text-brand-ink hover:bg-admin-surface-muted transition-colors"
+                  >
+                    Dashboard
+                  </button>
                   <hr className="my-1 border-admin-border" />
                   <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
+                    onClick={handleSignOut}
                     className="w-full text-left px-4 py-2 text-sm text-brand-danger hover:bg-admin-surface-muted transition-colors"
                   >
                     Sign out
@@ -139,22 +144,16 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="lg:hidden w-9 h-9 flex items-center justify-center text-brand-ink hover:bg-admin-surface-muted bg-transparent border-none cursor-pointer transition-colors"
             aria-label="Toggle Navigation Stack"
           >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" strokeWidth={2} />
-            ) : (
-              <Menu className="w-5 h-5" strokeWidth={2} />
-            )}
+            {isMobileMenuOpen ? <X className="w-5 h-5" strokeWidth={2} /> : <Menu className="w-5 h-5" strokeWidth={2} />}
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu Panel */}
       {isMobileMenuOpen && (
         <div className="fixed inset-y-0 right-0 top-16 z-40 w-full sm:w-80 bg-admin-surface border-l border-admin-border flex flex-col justify-between p-6 lg:hidden animate-in slide-in-from-right duration-200">
           <div className="flex flex-col gap-2">
@@ -175,9 +174,7 @@ export default function Navbar() {
                 </a>
               );
             })}
-
             <hr className="my-2 border-admin-border" />
-
             {!isAuthenticated ? (
               <a
                 href="/login"
@@ -188,20 +185,21 @@ export default function Navbar() {
               </a>
             ) : (
               <>
-                <div className="text-xs uppercase text-brand-muted px-4 pt-2 tracking-wide">Dashboard</div>
-                {dashboardMenuItems.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="px-4 py-2 text-[14px] text-brand-ink hover:bg-admin-surface-muted transition-colors"
-                  >
-                    {item.label}
-                  </a>
-                ))}
                 <button
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className="mt-4 px-4 py-2 text-left text-sm text-brand-danger hover:bg-admin-surface-muted transition-colors"
+                  onClick={() => {
+                    handleDashboardRedirect();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="px-4 py-3 text-left text-[15px] font-medium text-brand-ink hover:bg-admin-surface-muted transition-colors"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    handleSignOut();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="px-4 py-3 text-left text-[15px] font-medium text-brand-danger hover:bg-admin-surface-muted transition-colors"
                 >
                   Sign out
                 </button>
@@ -224,9 +222,7 @@ export default function Navbar() {
                 </button>
               ) : (
                 <div className="flex flex-col items-end gap-1">
-                  <span className="text-[12px] font-mono text-brand-muted">
-                    {truncateAddress(address!)}
-                  </span>
+                  <span className="text-[12px] font-mono text-brand-muted">{truncateAddress(address!)}</span>
                   <button
                     onClick={() => {
                       disconnectWallet();

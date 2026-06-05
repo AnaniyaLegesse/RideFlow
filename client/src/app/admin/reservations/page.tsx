@@ -1,10 +1,9 @@
-// app/admin/reservations/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { AdminSectionHeader } from '@/features/admin/components/AdminSectionHeader';
 import { AdminDataTable } from '@/features/admin/components/AdminDataTable';
-import { fetchReservations } from '@/features/admin/services/adminService';
+import { fetchAllBookings } from '@/features/admin/services/adminService';
 import { ErrorBanner } from '@/components/ui/ErrorBanner';
 import type { ReservationLog } from '@/features/admin/types';
 
@@ -22,18 +21,18 @@ export default function AdminReservationsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchReservations()
+    fetchAllBookings()
       .then(setReservations)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-8 text-center">Loading reservation logs...</div>;
+  if (loading) return <div className="p-8 text-center">Loading bookings...</div>;
   if (error) return <ErrorBanner message={error} />;
 
   return (
     <div className="space-y-6">
-      <AdminSectionHeader title="CENTRAL RESERVATION LOGS" />
+      <AdminSectionHeader title="CENTRAL BOOKING LOGS" />
       <AdminDataTable headers={[...HEADERS]} headClassName="text-admin-table-head">
         {reservations.map((res) => (
           <tr key={res.id} className="border-b border-admin-border last:border-none">
@@ -44,7 +43,15 @@ export default function AdminReservationsPage() {
               {res.pickupDate} — {res.returnDate}
             </td>
             <td className="p-4">
-              <span className="text-[11px] font-bold px-2 py-0.5 bg-brand-success/10 text-brand-success uppercase tracking-wider">
+              <span
+                className={`text-[11px] font-bold px-2 py-0.5 uppercase tracking-wider rounded-none ${
+                  res.allocationStatus === 'Confirmed'
+                    ? 'bg-green-100 text-green-800'
+                    : res.allocationStatus === 'Completed'
+                    ? 'bg-blue-100 text-blue-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                }`}
+              >
                 {res.allocationStatus}
               </span>
             </td>

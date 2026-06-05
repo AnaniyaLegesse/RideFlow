@@ -1,4 +1,3 @@
-// app/admin/blog/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -54,13 +53,13 @@ export default function AdminBlogPage() {
         setEditingBlogId(null);
         setBlogEditForm(null);
       }
-    } catch {
-      setError('Failed to delete blog post.');
+    } catch (err: any) {
+      setError(err.message);
     }
   }, [editingBlogId]);
 
   const handleCreate = () => router.push('/admin/blog/create');
-  const handleEditRoute = (id: string) => router.push(`/admin/blog/${id.toLowerCase()}/edit`);
+  const handleEditRoute = (id: string) => router.push(`/admin/blog/${id}/edit`);
 
   if (loading) return <div className="p-8 text-center">Loading blog posts...</div>;
   if (error) return <ErrorBanner message={error} />;
