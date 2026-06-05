@@ -46,7 +46,7 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 // ─── Structured Data ──────────────────────────────────────────────────────────
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rideflow.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000/'
 
 // Blog schema — registers this as a blog listing page with Google
 const blogSchema = {

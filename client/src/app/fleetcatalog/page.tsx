@@ -6,7 +6,7 @@ import { Suspense } from 'react'
 import FleetCatalogClient from './FleetCatalogClient'
 
 // ─── Site URL ─────────────────────────────────────────────────────────────────
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rideflow.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000/'
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
@@ -17,35 +17,13 @@ export const metadata: Metadata = {
   description:
     'Browse SUVs, sedans, electric vehicles, luxury cars, and pickup trucks available to rent. Filter by type, fuel, and price. Pay with ETH via MetaMask. Book in under 3 minutes.',
 
-  keywords: [
-    'rent a car',
-    'vehicle rental fleet',
-    'rent electric vehicle',
-    'rent SUV',
-    'rent luxury car',
-    'crypto car rental',
-    'ETH vehicle rental',
-    'RideFlow fleet',
-    'rent car with MetaMask',
-    'blockchain car rental',
-  ],
+
 
   alternates: {
     canonical: '/fleet',
   },
 
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-snippet': -1,
-      'max-image-preview': 'large',
-      'max-video-preview': -1,
-    },
-  },
-
+  
   openGraph: {
     type: 'website',
     url: '/fleet',
