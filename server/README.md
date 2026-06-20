@@ -1,24 +1,60 @@
-# Server (Backend)
+# 🚀 RideFlow Backend API
 
-Overview
+Production backend for the RideFlow car rental & marketplace platform. Built with Node.js, Express, PostgreSQL (Supabase), MongoDB (Atlas), and a Web3 layer for on-chain rental agreements.
 
-The `server` folder contains the backend API and administrative services powering RideFlow. It handles vehicle and booking data, authentication, and admin operations.
+## 📡 Live API
 
-Getting Started (example)
+| Resource | URL |
+|----------|-----|
+| **Base URL** | `https://rideflow-production-492a.up.railway.app/api` |
+| **Swagger Docs** | `https://rideflow-production-492a.up.railway.app/api/docs` |
+| **Health Check** | `https://rideflow-production-492a.up.railway.app/api/health` |
 
-1. Install dependencies: `npm install`
-2. Create `.env` with values for `DATABASE_URL`, `JWT_SECRET`, and any provider keys.
-3. Run dev server: `npm run dev` or `npm start`
+## ⚙️ Tech Stack
 
-Common Endpoints
+- **Runtime:** Node.js / Express
+- **Databases:** PostgreSQL (Prisma) + MongoDB (Mongoose)
+- **Auth:** JWT (bcrypt, role-based access)
+- **File Storage:** Cloudinary
+- **Blockchain:** Solidity smart contract on Sepolia (ethers.js, Infura)
+- **Docs:** Swagger (OpenAPI 3.0)
+- **Deployment:** Railway
 
-- `GET /vehicles` — list and filter vehicles
-- `GET /vehicles/:id` — vehicle details
-- `POST /bookings` — create a booking
-- `GET /bookings/:userId` — user booking records
-- `POST /auth/login` — user login
-- Admin routes under `/admin` for vehicle CRUD and booking management
+## 🛠️ Local Setup
 
-Notes
+```bash
+git clone https://github.com/AnaniyaLegesse/RideFlow.git
+cd RideFlow/server
+npm install
+cp .env.example .env   # fill in your real values
+npx prisma generate
+npm run dev
 
-Adapt the commands to your backend stack (Node/Express, Nest, Django, etc.). Include migration and seeding steps if a database schema is used.
+✨ Key Features
+
+    Auth – Register, login, role-based middleware (customer, sales_agent, admin)
+
+    Vehicles – CRUD with image upload & filtering
+
+    Bookings – Conflict prevention, status tracking, automatic price calculation
+
+    Inquiries – Sales inquiry hub with replies
+
+    Admin Analytics – Revenue, fleet stats, most-booked vehicles
+
+    User Management – Admin can change roles, deactivate/delete users
+
+    Blog – Full CRUD for blog posts
+
+    Web3 Audit Trail – Every confirmed booking is recorded on the Sepolia blockchain
+
+    Payment Integration – Smart contract payAndRecord accepts ETH via MetaMask
+
+🔗 Smart Contract
+
+    Network: Sepolia testnet
+
+    Address: 0x631cE6A52097B8cda2657cBB7D0090d296468620 (Etherscan)
+
+    Functions: recordAgreement, payAndRecord (payable), withdraw, getAgreement
+
