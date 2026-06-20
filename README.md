@@ -197,7 +197,7 @@ src/
 
 ## Live API
 
-https://upbeat-smile-production.up.railway.app/api
+https://rideflow-production-492a.up.railway.app/api/docs
 
 ## API Documentation
 
@@ -438,6 +438,6 @@ Frontend:
 https://ride-floww.vercel.app/
 
 Backend:
-https://upbeat-smile-production.up.railway.app/api
+https://rideflow-production-492a.up.railway.app/api/docs
 
 </div>
