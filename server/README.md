@@ -1,138 +1,60 @@
-# RideFlow Backend API
+# 🚀 RideFlow Backend API
 
-Car rental and marketplace REST API.
+Production backend for the RideFlow car rental & marketplace platform. Built with Node.js, Express, PostgreSQL (Supabase), MongoDB (Atlas), and a Web3 layer for on-chain rental agreements.
 
-- **Live API:** https://upbeat-smile-production.up.railway.app/api
-- **API Docs:** https://upbeat-smile-production.up.railway.app/api/docs
+## 📡 Live API
 
----
+| Resource | URL |
+|----------|-----|
+| **Base URL** | `https://rideflow-production-492a.up.railway.app/api` |
+| **Swagger Docs** | `https://rideflow-production-492a.up.railway.app/api/docs` |
+| **Health Check** | `https://rideflow-production-492a.up.railway.app/api/health` |
 
-## Requirements
+## ⚙️ Tech Stack
 
-- Node.js v20+
-- Git
+- **Runtime:** Node.js / Express
+- **Databases:** PostgreSQL (Prisma) + MongoDB (Mongoose)
+- **Auth:** JWT (bcrypt, role-based access)
+- **File Storage:** Cloudinary
+- **Blockchain:** Solidity smart contract on Sepolia (ethers.js, Infura)
+- **Docs:** Swagger (OpenAPI 3.0)
+- **Deployment:** Railway
 
----
-
-## Setup
+## 🛠️ Local Setup
 
 ```bash
-git clone https://github.com/Amanuel088/RideFlow.git
-cd RideFlow
+git clone https://github.com/AnaniyaLegesse/RideFlow.git
+cd RideFlow/server
 npm install
-cp .env.example .env
+cp .env.example .env   # fill in your real values
 npx prisma generate
 npm run dev
-```
 
-Visit http://localhost:4000/api/health to confirm it works.
+✨ Key Features
 
----
+    Auth – Register, login, role-based middleware (customer, sales_agent, admin)
 
-## Environment Variables
+    Vehicles – CRUD with image upload & filtering
 
-Fill in `.env` with these values. Ask the backend team for the actual credentials.
+    Bookings – Conflict prevention, status tracking, automatic price calculation
 
-```env
-NODE_ENV=development
-PORT=4000
-APP_NAME=CarRentalBackend
+    Inquiries – Sales inquiry hub with replies
 
-DATABASE_URL=        # PostgreSQL pooler URL (Neon or Supabase)
-DIRECT_URL=          # PostgreSQL direct URL
-MONGODB_URI=         # MongoDB Atlas connection string
-JWT_SECRET=          # Any long random string
-JWT_EXPIRES_IN=7d
-BCRYPT_ROUNDS=12
+    Admin Analytics – Revenue, fleet stats, most-booked vehicles
 
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-```
+    User Management – Admin can change roles, deactivate/delete users
 
----
+    Blog – Full CRUD for blog posts
 
-## API Endpoints
+    Web3 Audit Trail – Every confirmed booking is recorded on the Sepolia blockchain
 
-All endpoints are prefixed with `/api`. Protected routes require `Authorization: Bearer <token>`.
+    Payment Integration – Smart contract payAndRecord accepts ETH via MetaMask
 
-### Auth
-```
-POST   /auth/register       Create account
-POST   /auth/login          Login — returns JWT token
-GET    /auth/me             Get logged-in user (protected)
-```
+🔗 Smart Contract
 
-### Vehicles
-```
-GET    /vehicles            List vehicles (filters below)
-GET    /vehicles/:id        Get one vehicle
-POST   /vehicles            Create vehicle (admin, agent)
-PUT    /vehicles/:id        Update vehicle (admin, agent)
-DELETE /vehicles/:id        Delete vehicle (admin only)
-```
+    Network: Sepolia testnet
 
-### Bookings
-```
-POST   /bookings            Create booking (protected)
-GET    /bookings/my         My bookings (protected)
-GET    /bookings/:id        Get one booking (protected)
-PATCH  /bookings/:id/status Update status (protected)
-GET    /bookings            All bookings (admin, agent)
-```
+    Address: 0x631cE6A52097B8cda2657cBB7D0090d296468620 (Etherscan)
 
-### Inquiries
-```
-POST   /inquiries           Submit inquiry (protected)
-GET    /inquiries/my        My inquiries (protected)
-GET    /inquiries/:id       Get one inquiry (protected)
-POST   /inquiries/:id/reply Reply to inquiry (protected)
-PATCH  /inquiries/:id/status Update status (admin, agent)
-GET    /inquiries           All inquiries (admin, agent)
-```
+    Functions: recordAgreement, payAndRecord (payable), withdraw, getAgreement
 
-### Analytics (admin only)
-```
-GET    /analytics/overview
-GET    /analytics/revenue
-GET    /analytics/most-booked
-GET    /analytics/fleet
-GET    /analytics/recent-bookings
-```
-
----
-
-## Vehicle Filters
-
-```
-GET /api/vehicles?category=suv&fuelType=electric&minPrice=50&maxPrice=200&isAvailable=true&page=1&limit=10
-```
-
-Categories: `economy` `compact` `suv` `luxury` `van` `electric` `convertible`
-Fuel types: `petrol` `diesel` `electric` `hybrid`
-Transmission: `manual` `automatic`
-
----
-
-## Roles
-
-| Role | Access |
-|---|---|
-| `customer` | Browse, book, inquire |
-| `sales_agent` | + manage vehicles and inquiries |
-| `admin` | Full access including analytics |
-
-To set a role (run in your database SQL editor):
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
-```
-
----
-
-## Notes
-
-- Prices are in **EUR**
-- Dates format: `YYYY-MM-DD`
-- Vehicle IDs are MongoDB strings — User and booking IDs are integers
-- Image uploads use `multipart/form-data`, everything else uses `application/json`
-- Full interactive docs at `/api/docs` — test every endpoint from the browser

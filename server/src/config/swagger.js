@@ -30,6 +30,7 @@ const options = {
       { name: 'Analytics' },
       { name: 'Admin' },
       { name: 'Blockchain' },
+      { name: 'Blog' },
     ],
     components: {
       securitySchemes: {
@@ -54,6 +55,22 @@ const options = {
             createdAt: { type: 'string', format: 'date-time' },
           },
         },
+        Blog: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string', example: '6a1ff7aee762d9949f52b94c' },
+            title: { type: 'string', example: 'The Future of Electric Vehicles' },
+            category: { type: 'string', enum: ['INSIGHTS', 'ENGINEERING', 'ANNOUNCEMENTS'] },
+            content: { type: 'string' },
+            excerpt: { type: 'string' },
+            coverUrl: { type: 'string' },
+            author: { type: 'string' },
+            publishedDate: { type: 'string', format: 'date' },
+            status: { type: 'string', enum: ['Published', 'Draft'] },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
         Vehicle: {
           type: 'object',
           properties: {
@@ -70,6 +87,9 @@ const options = {
             isAvailable: { type: 'boolean', example: true },
             location: { type: 'string', example: 'Berlin, Germany' },
             images: { type: 'array', items: { type: 'object', properties: { url: { type: 'string' }, publicId: { type: 'string' } } } },
+            plateNumber: { type: 'string', example: 'AA-2-A8944' },
+            batteryOrFuel: { type: 'string', example: '94%' },
+            currentLocation: { type: 'string', example: 'Bole Hub' },
           },
         },
         Booking: {

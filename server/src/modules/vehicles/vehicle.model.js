@@ -48,6 +48,24 @@ const vehicleSchema = new mongoose.Schema({
     required: [true, 'Transmission is required'],
     enum: ['manual', 'automatic'],
   },
+  plateNumber: {
+  type: String,
+  trim: true,
+  maxlength: 20,
+
+  },
+  batteryOrFuel: {
+  type: String,
+  trim: true,
+  maxlength: 10,
+
+  },
+  currentLocation: {
+  type: String,
+  trim: true,
+  maxlength: 100,
+  
+  },
   seats: {
     type: Number,
     required: [true, 'Number of seats is required'],

@@ -52,6 +52,21 @@ export const createVehicleValidation = [
   body('features')
     .optional()
     .isArray().withMessage('Features must be an array'),
+  
+  body('plateNumber')
+  .optional()
+  .trim()
+  .isLength({ max: 20 }).withMessage('Plate number cannot exceed 20 characters'),
+
+  body('batteryOrFuel')
+    .optional()
+    .trim()
+    .isLength({ max: 10 }).withMessage('Battery/fuel cannot exceed 10 characters'),
+
+  body('currentLocation')
+    .optional()
+    .trim()
+    .isLength({ max: 100 }).withMessage('Current location cannot exceed 100 characters'),
 ];
 
 export const updateVehicleValidation = [
@@ -67,6 +82,10 @@ export const updateVehicleValidation = [
   body('description').optional().trim().isLength({ max: 1000 }),
   body('location').optional().trim().isLength({ max: 100 }),
   body('features').optional().isArray(),
+
+  body('plateNumber').optional().trim().isLength({ max: 20 }),
+  body('batteryOrFuel').optional().trim().isLength({ max: 10 }),
+  body('currentLocation').optional().trim().isLength({ max: 100 }),
 ];
 
 export const listVehiclesValidation = [
@@ -78,4 +97,7 @@ export const listVehiclesValidation = [
   query('fuelType').optional().isIn(['petrol', 'diesel', 'electric', 'hybrid']),
   query('transmission').optional().isIn(['manual', 'automatic']),
   query('isAvailable').optional().isBoolean(),
+  query('plateNumber').optional().trim().isLength({ max: 20 }),
+  query('batteryOrFuel').optional().trim().isLength({ max: 10 }),
+  query('currentLocation').optional().trim().isLength({ max: 100 }),
 ];
