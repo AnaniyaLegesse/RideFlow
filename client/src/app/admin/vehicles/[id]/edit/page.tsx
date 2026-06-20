@@ -1,125 +1,208 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-
-interface VehicleAsset {
-  id: string;
-  modelName: string;
-  plateNumber: string;
-  status: 'Available' | 'On Rental' | 'Maintenance';
-  batteryOrFuel: string;
-  currentLocation: string;
-  imageUrl?: string;
-}
+import toast from 'react-hot-toast';
+import { fetchVehicleById, updateVehicle } from '@/features/admin/services/adminService';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 export default function EditVehiclePage() {
   const router = useRouter();
   const params = useParams();
-  const assetId = params?.id as string;
+  const id = params?.id as string;
 
-  const [vehicleData, setVehicleData] = useState<VehicleAsset | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [form, setForm] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [featureInput, setFeatureInput] = useState('');
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<{ url: string; publicId: string }[]>([]);
 
   useEffect(() => {
-    if (assetId) {
-      const mockDatabase: Record<string, VehicleAsset> = {
-        'V001': { id: 'V001', modelName: 'BMW iX3 M Sport', plateNumber: 'AA-2-A8944', status: 'Available', batteryOrFuel: '94%', currentLocation: 'Bole Hub', imageUrl: 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=600&q=80' },
-        'V002': { id: 'V002', modelName: 'BMW iX xDrive50', plateNumber: 'AA-2-B1102', status: 'On Rental', batteryOrFuel: '42%', currentLocation: 'In Transit' },
-        'V003': { id: 'V003', modelName: 'BMW 5 Series Sedan', plateNumber: 'AA-2-C5591', status: 'Maintenance', batteryOrFuel: '100%', currentLocation: 'Sarbet Workshop' }
-      };
+    if (!id) return;
+    fetchVehicleById(id)
+      .then(vehicle => {
+        setForm({
+          make: vehicle.make,
+          model: vehicle.model,
+          year: vehicle.year,
+          pricePerDay: vehicle.pricePerDay,
+          category: vehicle.category,
+          fuelType: vehicle.fuelType,
+          transmission: vehicle.transmission,
+          seats: vehicle.seats,
+          description: vehicle.description || '',
+          location: vehicle.location || '',
+          features: vehicle.features || [],
+          isAvailable: vehicle.isAvailable,
+          currency: vehicle.currency || 'EUR',
+        });
+        setExistingImages(vehicle.images || []);
+      })
+      .catch(err => toast.error(err.message))
+      .finally(() => setLoading(false));
+  }, [id]);
 
-      const selectedAsset = mockDatabase[assetId.toUpperCase()];
-      if (selectedAsset) {
-        setVehicleData(selectedAsset);
-        if (selectedAsset.imageUrl) setImagePreview(selectedAsset.imageUrl);
-      } else {
-        alert(`Asset token ${assetId} could not be located.`);
-        router.push('/admin');
-      }
-      setIsLoading(false);
-    }
-  }, [assetId, router]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImagePreview(URL.createObjectURL(file));
+  const addFeature = () => {
+    if (featureInput.trim()) {
+      setForm((prev: any) => ({ ...prev, features: [...prev.features, featureInput.trim()] }));
+      setFeatureInput('');
     }
   };
+  const removeFeature = (index: number) => {
+    setForm((prev: any) => ({ ...prev, features: prev.features.filter((_: any, i: number) => i !== index) }));
+  };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert(`Asset configuration update executed successfully for vehicle: ${vehicleData?.id}`);
-    router.push('/admin');
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      Object.entries(form).forEach(([key, value]) => {
+        if (key === 'features') {
+          (value as string[]).forEach(f => formData.append('features', f));
+        } else if (value !== undefined && value !== null) {
+          formData.append(key, String(value));
+        }
+      });
+      imageFiles.forEach(file => formData.append('images', file));
+      await updateVehicle(id, formData);
+      toast.success('Vehicle updated successfully');
+      router.push('/admin/vehicles');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update vehicle');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  if (isLoading || !vehicleData) return <div className="p-12 text-center text-brand-muted">Loading Sync Framework...</div>;
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <div className="space-y-4">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+  if (!form) return null;
 
   return (
-    <div className="w-full min-h-screen bg-admin-surface text-brand-ink pt-8 pb-24 px-4 md:px-12">
-      <div className="max-w-[768px] mx-auto">
-        <button onClick={() => router.push('/admin')} className="text-admin-label text-brand-muted hover:text-brand-ink transition-colors uppercase bg-transparent border-none cursor-pointer mb-12">
-          ← Abort Modifications and Return
-        </button>
-
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="flex items-baseline space-x-3 border-b border-admin-border pb-4">
-            <h2 className="uppercase text-brand-ink text-2xl font-bold">Modify Fleet Asset</h2>
-            <span className="font-mono text-sm text-brand-muted font-bold">[{vehicleData.id}]</span>
+    <div className="max-w-3xl mx-auto py-8 px-4">
+      <h1 className="text-2xl font-bold uppercase text-brand-ink mb-6">Edit Vehicle</h1>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Make *</label>
+            <input type="text" required value={form.make} onChange={e => setForm({ ...form, make: e.target.value })} className="w-full h-10 border border-admin-border px-3" />
           </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Model *</label>
+            <input type="text" required value={form.model} onChange={e => setForm({ ...form, model: e.target.value })} className="w-full h-10 border border-admin-border px-3" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Year *</label>
+            <input type="number" required min="1900" max={new Date().getFullYear() + 1} value={form.year} onChange={e => setForm({ ...form, year: parseInt(e.target.value) })} className="w-full h-10 border border-admin-border px-3" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Price per Day *</label>
+            <input type="number" required min="0" step="0.01" value={form.pricePerDay} onChange={e => setForm({ ...form, pricePerDay: parseFloat(e.target.value) })} className="w-full h-10 border border-admin-border px-3" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Category *</label>
+            <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} className="w-full h-10 border border-admin-border px-3">
+              <option value="economy">Economy</option>
+              <option value="compact">Compact</option>
+              <option value="suv">SUV</option>
+              <option value="luxury">Luxury</option>
+              <option value="van">Van</option>
+              <option value="electric">Electric</option>
+              <option value="convertible">Convertible</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Fuel Type *</label>
+            <select value={form.fuelType} onChange={e => setForm({ ...form, fuelType: e.target.value })} className="w-full h-10 border border-admin-border px-3">
+              <option value="petrol">Petrol</option>
+              <option value="diesel">Diesel</option>
+              <option value="electric">Electric</option>
+              <option value="hybrid">Hybrid</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Transmission *</label>
+            <select value={form.transmission} onChange={e => setForm({ ...form, transmission: e.target.value })} className="w-full h-10 border border-admin-border px-3">
+              <option value="manual">Manual</option>
+              <option value="automatic">Automatic</option>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Seats *</label>
+            <input type="number" required min="1" max="20" value={form.seats} onChange={e => setForm({ ...form, seats: parseInt(e.target.value) })} className="w-full h-10 border border-admin-border px-3" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Location (optional)</label>
+            <input type="text" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} className="w-full h-10 border border-admin-border px-3" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-admin-label uppercase text-brand-muted">Currency (EUR)</label>
+            <input type="text" value={form.currency} onChange={e => setForm({ ...form, currency: e.target.value.toUpperCase() })} className="w-full h-10 border border-admin-border px-3" />
+          </div>
+        </div>
 
+        <div className="space-y-1">
+          <label className="text-admin-label uppercase text-brand-muted">Description</label>
+          <textarea rows={4} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full border border-admin-border p-3" />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-admin-label uppercase text-brand-muted">Features</label>
+          <div className="flex gap-2">
+            <input type="text" value={featureInput} onChange={e => setFeatureInput(e.target.value)} className="flex-1 h-10 border border-admin-border px-3" placeholder="e.g., Bluetooth" />
+            <button type="button" onClick={addFeature} className="px-4 bg-brand-primary text-white">Add</button>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {form.features.map((f: string, i: number) => (
+              <span key={i} className="bg-admin-surface-muted px-2 py-1 text-sm flex items-center gap-1">
+                {f}
+                <button type="button" onClick={() => removeFeature(i)} className="text-brand-danger">✕</button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {existingImages.length > 0 && (
           <div className="space-y-2">
-            <label className="text-admin-label text-brand-muted uppercase block">Update Display Cover Profile</label>
-            <div className="border border-admin-border p-6 bg-admin-surface-muted flex flex-col sm:flex-row items-center gap-6 rounded-none">
-              <div className="w-40 h-24 bg-admin-surface border border-admin-border-strong flex items-center justify-center overflow-hidden shrink-0">
-                {imagePreview ? <img src={imagePreview} alt="Asset" className="w-full h-full object-cover" /> : <span className="text-[11px] text-brand-muted font-mono">NO MEDIA</span>}
-              </div>
-              <div className="relative">
-                <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                <button type="button" className="h-10 px-4 bg-admin-surface border border-brand-ink text-brand-ink uppercase rounded-none pointer-events-none text-xs font-bold">Swap Image Profile File</button>
-              </div>
+            <label className="text-admin-label uppercase text-brand-muted">Current Images</label>
+            <div className="flex gap-2 flex-wrap">
+              {existingImages.map((img, idx) => (
+                <img key={idx} src={img.url} alt="Vehicle" className="w-20 h-20 object-cover border" />
+              ))}
             </div>
           </div>
+        )}
 
-          <div className="space-y-6">
-            <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-              <label className="absolute top-0 left-0 text-admin-label text-brand-muted uppercase">Model Specification Matrix</label>
-              <input type="text" value={vehicleData.modelName} onChange={e => setVehicleData({...vehicleData, modelName: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" />
-            </div>
+        <div className="space-y-2">
+          <label className="text-admin-label uppercase text-brand-muted">Add New Images</label>
+          <input type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={e => setImageFiles(e.target.files ? Array.from(e.target.files) : [])} className="block w-full" />
+          <div className="text-xs text-brand-muted">Selected: {imageFiles.length} file(s)</div>
+        </div>
 
-            <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-              <label className="absolute top-0 left-0 text-admin-label text-brand-muted uppercase">Plate Registry Code</label>
-              <input type="text" value={vehicleData.plateNumber} onChange={e => setVehicleData({...vehicleData, plateNumber: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 font-mono uppercase text-[15px]" />
-            </div>
+        <div className="flex items-center gap-3">
+          <input type="checkbox" id="isAvailable" checked={form.isAvailable} onChange={e => setForm({ ...form, isAvailable: e.target.checked })} />
+          <label htmlFor="isAvailable" className="text-admin-label uppercase text-brand-muted">Available for booking</label>
+        </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-                <label className="absolute top-0 left-0 text-admin-label text-brand-muted uppercase">Energy Capacity Index</label>
-                <input type="text" value={vehicleData.batteryOrFuel} onChange={e => setVehicleData({...vehicleData, batteryOrFuel: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" />
-              </div>
-              <div className="relative pt-5 pb-1 border-b border-admin-border-strong focus-within:border-brand-ink">
-                <label className="absolute top-0 left-0 text-admin-label text-brand-muted uppercase">Current Operational Station</label>
-                <input type="text" value={vehicleData.currentLocation} onChange={e => setVehicleData({...vehicleData, currentLocation: e.target.value})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 text-[15px]" />
-              </div>
-            </div>
-
-            <div className="relative pt-5 pb-1 border-b border-admin-border-strong">
-              <label className="absolute top-0 left-0 text-admin-label text-brand-muted uppercase">Operational State</label>
-              <select value={vehicleData.status} onChange={e => setVehicleData({...vehicleData, status: e.target.value as any})} className="w-full bg-transparent text-brand-ink focus:outline-none border-none p-0 mt-2 appearance-none rounded-none text-[15px] cursor-pointer font-bold">
-                <option value="Available">AVAILABLE FOR IMMEDIATE DISPATCH</option>
-                <option value="On Rental">ACTIVE RENTAL LEASE TRACKING</option>
-                <option value="Maintenance">CRITICAL WORKSHOP SERVICE LOG</option>
-              </select>
-            </div>
-          </div>
-
-          <button type="submit" className="h-12 px-10 bg-brand-ink text-white uppercase rounded-none hover:bg-brand-primary transition-colors border-none cursor-pointer text-sm font-bold tracking-wide">
-            Update Configuration Parameters
+        <div className="flex gap-4 pt-4">
+          <button type="submit" disabled={submitting} className="px-6 py-2 bg-brand-primary text-white uppercase font-bold disabled:opacity-50">
+            {submitting ? 'Saving...' : 'Save Changes'}
           </button>
-        </form>
-      </div>
+          <button type="button" onClick={() => router.back()} className="px-6 py-2 border border-admin-border uppercase">Cancel</button>
+        </div>
+      </form>
     </div>
   );
 }

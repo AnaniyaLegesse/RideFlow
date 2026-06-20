@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { findUserByCredentials } from '@/lib/authUsers';
 
-export const { handlers, auth } = NextAuth({
+export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: {
@@ -13,7 +13,6 @@ export const { handlers, auth } = NextAuth({
         const email = String(credentials?.email ?? '');
         const password = String(credentials?.password ?? '');
 
-        // TODO: Replace this hardcoded/in-memory lookup with a database-backed user lookup.
         const user = findUserByCredentials(email, password);
 
         if (!user) {
@@ -32,17 +31,38 @@ export const { handlers, auth } = NextAuth({
   callbacks: {
     jwt({ token, user }) {
       if (user && 'role' in user) {
-        token.role = String(user.role);
+        token.role = user.role;
       }
-
       return token;
     },
     session({ session, token }) {
-      if (session.user) {
-        session.user.role = String(token.role ?? '');
+      if (session.user && token.role) {
+        session.user.role = token.role as string;
+      }
+      return session;
+    },
+
+    authorized({ auth, request }) {
+      const isLoggedIn = !!auth?.user;
+      const path = request.nextUrl.pathname;
+
+
+      const isPublicPath = path === '/' || path.startsWith('/blog') || path === '/faq' || path === '/login' || path === '/signup';
+      if (isPublicPath) return true;
+
+      if (!isLoggedIn) {
+        return false; 
       }
 
-      return session;
+      if (path.startsWith('/admin')) {
+        return auth.user.role === 'admin';
+      }
+
+      if (path.startsWith('/dashboard')) {
+        return true;
+      }
+
+      return true;
     },
   },
 });

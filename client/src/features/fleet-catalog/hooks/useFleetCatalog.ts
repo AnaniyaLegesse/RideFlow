@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   DEFAULT_FLEET_FILTERS,
   filterFleetVehicles,
 } from '@/features/fleet-catalog/lib/fleetCatalogFilters';
-import { fleetCatalogSeedData } from '@/features/fleet-catalog/services/fleetCatalogService';
+import { fetchFleetVehicles } from '@/features/fleet-catalog/services/fleetCatalogService';
 import type {
   FleetCatalogFilters,
   FleetVehicle,
@@ -15,6 +15,8 @@ import type {
 
 export const useFleetCatalog = () => {
   const router = useRouter();
+  const [vehicles, setVehicles] = useState<FleetVehicle[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('Recommended');
   const [selectedCar, setSelectedCar] = useState<FleetVehicle | null>(null);
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
@@ -23,7 +25,18 @@ export const useFleetCatalog = () => {
   });
 
   const detailPanelRef = useRef<HTMLDivElement>(null);
-  const vehicles = useMemo(() => [...fleetCatalogSeedData.vehicles], []);
+
+  useEffect(() => {
+    fetchFleetVehicles()
+      .then(data => {
+        setVehicles(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
   const filteredVehicles = useMemo(
     () => filterFleetVehicles(vehicles, activeFilter, filters),
@@ -62,12 +75,23 @@ export const useFleetCatalog = () => {
 
   const startCheckout = useCallback(
     (car: FleetVehicle, rate: RentalRate) => {
-      router.push(`/checkout?carId=${encodeURIComponent(car.id)}&rateId=${rate}`);
+      const params = new URLSearchParams(window.location.search);
+      const pickupDate = params.get('pickupDate');
+      const returnDate = params.get('returnDate');
+      console.log('[Checkout] URL params:', { pickupDate, returnDate });
+      if (!pickupDate || !returnDate) {
+        alert('Please select pickup and return dates before choosing a vehicle.');
+        return;
+      }
+      let url = `/checkout?carId=${encodeURIComponent(car.id)}&rateId=${rate}`;
+      url += `&pickupDate=${encodeURIComponent(pickupDate)}&returnDate=${encodeURIComponent(returnDate)}`;
+      router.push(url);
     },
     [router]
   );
 
   return {
+    loading,
     activeFilter,
     selectedCar,
     setSelectedCar,

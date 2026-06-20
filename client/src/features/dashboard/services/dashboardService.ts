@@ -1,3 +1,4 @@
+import { api } from '@/lib/api/client';
 import type {
   AccountProfile,
   Booking,
@@ -61,7 +62,6 @@ export const getDepositAddress = (asset: DashboardCryptoAsset): string =>
 export const getLinkedWalletAddress = (asset: DashboardCryptoAsset): string =>
   WALLET_ADDRESSES[asset].truncated;
 
-/** Simulated Web3 connection — replace with wagmi/rainbowkit when enabled. */
 export const connectWallet = async (
   asset: DashboardCryptoAsset
 ): Promise<{ address: string }> => {
@@ -78,4 +78,24 @@ export const saveAccountProfile = async (
 ): Promise<AccountProfile> => {
   if (!profile.name.trim()) throw new Error('Name is required');
   return structuredClone(profile);
+};
+
+export const fetchMyBookings = async (): Promise<Booking[]> => {
+  const res = await api.get<{ bookings: any[] }>('/bookings/my?limit=50');
+  return res.bookings.map((b: any) => {
+    let status: Booking['status'] = 'Upcoming';
+    if (b.status === 'completed') status = 'Completed';
+    else if (b.status === 'cancelled') status = 'Cancelled';
+    return {
+      id: b.id.toString(),
+      vehicleModel: `${b.vehicle?.make || ''} ${b.vehicle?.model || ''}`.trim(),
+      category: b.vehicle?.category || '',
+      pickupDate: b.startDate ? new Date(b.startDate).toISOString().slice(0, 10) : '',
+      returnDate: b.endDate ? new Date(b.endDate).toISOString().slice(0, 10) : '',
+      location: b.vehicle?.location || '',
+      status,
+      pricePaid: `${b.totalPrice} ${b.currency}`,
+      paymentMethod: 'Crypto (simulated)',
+    };
+  });
 };

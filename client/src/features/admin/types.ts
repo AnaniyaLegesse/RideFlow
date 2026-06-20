@@ -39,10 +39,12 @@ export type BlogCategory = 'INSIGHTS' | 'ENGINEERING' | 'ANNOUNCEMENTS';
 export interface BlogPost {
   id: string;
   title: string;
-  category: BlogCategory;
+  category: 'INSIGHTS' | 'ENGINEERING' | 'ANNOUNCEMENTS';
   publishedDate: string;
   author: string;
   status: 'Published' | 'Draft';
+  content: string;          
+  coverUrl: string;       
 }
 
 export type CryptoAsset = 'USDC' | 'BTC' | 'ETH' | 'SOL';
@@ -81,4 +83,15 @@ export interface FleetAnalytics {
   averageEnergy: number;
   pendingVolumeUSD: number;
   totalGrossRevenue: number;
+}
+
+export interface AdminUser {
+  id: number;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  role: 'customer' | 'sales_agent' | 'admin';
+  isActive: boolean;
+  createdAt: string;
 }

@@ -11,8 +11,6 @@ interface TabConfig {
 const FILTER_TABS: TabConfig[] = [
   { name: 'Recommended', icon: null },
   { name: 'Filters', icon: <Sliders className="w-4 h-4" strokeWidth={1.5} />, triggerPanel: true },
-  { name: 'Hot Offers', icon: <Flame className="w-4 h-4" strokeWidth={1.5} /> },
-  { name: 'Premium', icon: <Diamond className="w-4 h-4" strokeWidth={1.5} /> },
 ];
 
 interface FleetCatalogTabBarProps {

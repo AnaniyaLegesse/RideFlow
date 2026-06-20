@@ -1,50 +1,34 @@
-'use client';
+// ─── SERVER COMPONENT ─────────────────────────────────────────────────────────
+// No 'use client' — this is a Server Component so metadata is reliably exported.
+// The interactive tab navigation is inside DashboardClientLayout below.
 
-import { usePathname, useRouter } from 'next/navigation';
-import type { ReactNode } from 'react';
-import { DashboardShell } from '@/features/dashboard/components/DashboardShell';
-import { TabNav } from '@/components/ui/TabNav';
-import { DASHBOARD_TABS } from '@/features/dashboard/types';
+import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
+import { DashboardClientLayout } from '@/features/dashboard/components/DashboardClientLayout'
 
-const dashboardRoutes = {
-  BOOKINGS: '/dashboard/bookings',
-  ACCOUNT: '/dashboard/account',
-  'CRYPTO WALLET': '/dashboard/crypto',
-  HELP: '/dashboard/help',
-};
+// ─── Metadata ─────────────────────────────────────────────────────────────────
+// noindex here cascades to ALL child routes automatically:
+//   /dashboard, /dashboard/bookings, /dashboard/account,
+//   /dashboard/crypto, /dashboard/help
+// You do NOT need to add noindex to each individual dashboard page.
+export const metadata: Metadata = {
+  // Generic title — tabs change the visible heading, not the document title
+  title: 'My Dashboard | RideFlow',
 
-const tabsForNav = DASHBOARD_TABS.map((tab) => ({
-  id: tab,
-  label: tab,
-}));
-
-interface DashboardLayoutProps {
-  children: ReactNode;
+  // Block ALL dashboard routes from Google
+  robots: {
+    index:   false,
+    follow:  false,
+    nocache: true,
+    googleBot: {
+      index:  false,
+      follow: false,
+    },
+  },
 }
 
-export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const pathname = usePathname();
-  const router = useRouter();
-
-  const activeTab = (Object.entries(dashboardRoutes).find(
-    ([, route]) => pathname === route
-  )?.[0] ?? 'BOOKINGS') as (typeof DASHBOARD_TABS)[number];
-
-  const handleTabChange = (tabId: string) => {
-    const route = dashboardRoutes[tabId as keyof typeof dashboardRoutes];
-    if (route) router.push(route);
-  };
-
-  return (
-    <DashboardShell>
-      <TabNav
-        tabs={tabsForNav}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        className="mb-dashboard-nav-bottom"
-        tabClassName="leading-[1.3]"
-      />
-      {children}
-    </DashboardShell>
-  );
+// ─── Layout ───────────────────────────────────────────────────────────────────
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  // Thin server shell — all logic is inside DashboardClientLayout
+  return <DashboardClientLayout>{children}</DashboardClientLayout>
 }
