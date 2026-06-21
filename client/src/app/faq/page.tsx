@@ -131,7 +131,7 @@ const faqSchema = {
 }
 
 // ─── BreadcrumbList Schema ────────────────────────────────────────────────────
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://rideflow.com'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://ride-floww.vercel.app/'
 
 const breadcrumbSchema = {
   '@context': 'https://schema.org',
